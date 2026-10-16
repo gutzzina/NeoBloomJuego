@@ -27,6 +27,10 @@ let isMobile = false;
 let rotationRequired = false;
 let touchedHubId = -1;
 
+const COORDS_TEXT = "-34.9214°5, -57.9545° W";
+let coordsCopied = false;
+let coordsCopiedTimer = 0;
+
 function preload() {
   imgHoja1 = loadImage('data/Hoja1.png');
   imgHoja2 = loadImage('data/Hoja2.png');
@@ -108,6 +112,18 @@ function recalcLayout() {
 function draw() {
   globalTime += 0.02;
 
+  checkRotation();
+  if (coordsCopied && coordsCopiedTimer > 0) {
+    coordsCopiedTimer--;
+    if (coordsCopiedTimer <= 0) {
+      coordsCopied = false;
+    }
+  }
+  if (rotationRequired) {
+    drawRotationOverlay();
+    return;
+  }
+
   background(242, 245, 246);
   drawStudioGrid();
 
@@ -155,7 +171,9 @@ function draw() {
   }
   pop();
 
-  drawFullscreenButton();
+  if (!isMobile) {
+    drawFullscreenButton();
+  }
 }
 
 function drawFullscreenButton() {
@@ -183,8 +201,9 @@ function drawFullscreenButton() {
 function drawStudioGrid() {
   stroke(228, 233, 236);
   strokeWeight(1);
-  for (let x = 0; x < width; x += 35) line(x, 0, x, height);
-  for (let y = 0; y < height; y += 35) line(0, y, width, y);
+  const step = isMobile ? 45 : 35;
+  for (let x = 0; x < width; x += step) line(x, 0, x, height);
+  for (let y = 0; y < height; y += step) line(0, y, width, y);
 }
 
 function drawLightAurora() {
@@ -197,11 +216,12 @@ function drawLightAurora() {
     { r: 195, g: 220, b: 245, a: 40, weight: 50, yOffset: 220, freq: 0.004, speed: 0.5 }
   ];
 
+  const step = isMobile ? 48 : 30;
   for (let l of layers) {
     stroke(l.r, l.g, l.b, l.a);
     strokeWeight(l.weight);
     beginShape();
-    for (let x = -20; x <= BASE_W + 20; x += 30) {
+    for (let x = -20; x <= BASE_W + 20; x += step) {
       let n = noise(x * l.freq, globalTime * l.speed);
       let y = l.yOffset + map(n, 0, 1, -60, 60) + sin(x * 0.01 + globalTime) * 15;
       curveVertex(x, y);
@@ -215,7 +235,7 @@ function drawFloatingSpores() {
   noStroke();
   for (let s of spores) {
     s.y += s.speedY;
-    s.x += sin(globalTime * 2 + s.alphaOffset) * 0.25;
+    s.x += sin(globalTime * 2 + s.alphaOffset) * 0.2;
 
     if (s.y < -10) {
       s.y = BASE_H + 10;
@@ -419,26 +439,91 @@ function getGameMousePos() {
   };
 }
 
+function isRewardImageHoveredAt(gx, gy) {
+  if (!success || !imgRecompensa) return false;
+  let mw = 600;
+  let mh = 520;
+  let mx = BASE_W / 2 - mw / 2;
+  let my = BASE_H / 2 - mh / 2;
+  let boxY = my + 85;
+  let imgCenterY = boxY + 195;
+  let imgW = 400;
+  let imgH = (imgRecompensa.height / imgRecompensa.width) * imgW;
+  let imgX = BASE_W / 2 - imgW / 2;
+  let imgY = imgCenterY - imgH / 2;
+  return (gx >= imgX && gx <= imgX + imgW && gy >= imgY && gy <= imgY + imgH);
+}
+
+function isRewardImageHovered() {
+  let gPos = getGameMousePos();
+  return isRewardImageHoveredAt(gPos.x, gPos.y);
+}
+
+function copyCoords() {
+  if (coordsCopied) return;
+  const text = COORDS_TEXT;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      coordsCopied = true;
+      coordsCopiedTimer = 90;
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    coordsCopied = true;
+    coordsCopiedTimer = 90;
+  } catch (e) {
+    coordsCopied = true;
+    coordsCopiedTimer = 90;
+  }
+}
+
 function mousePressed() {
-  let btnW = 175;
-  let btnH = 34;
-  let btnX = width - btnW - 25;
-  let btnY = 25;
-  if (mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH) {
-    let fs = fullscreen();
-    fullscreen(!fs);
-    return;
+  if (rotationRequired) return;
+  if (success) {
+    if (isRewardImageHovered()) {
+      copyCoords();
+      return;
+    }
+  }
+  if (!isMobile) {
+    let btnW = 175;
+    let btnH = 34;
+    let btnX = width - btnW - 25;
+    let btnY = 25;
+    if (mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH) {
+      let fs = fullscreen();
+      fullscreen(!fs);
+      return;
+    }
   }
 
   updateHubCharging(true);
 }
 
 function mouseReleased() {
+  if (rotationRequired) return;
   touchedHubId = -1;
   for (let hub of hubs) hub.charging = false;
 }
 
 function mouseDragged() {
+  if (rotationRequired) return;
   updateHubCharging(true);
 }
 
@@ -456,6 +541,13 @@ function updateHubCharging(isDown) {
 function touchStarted(e) {
   if (rotationRequired) return false;
   if (e && e.preventDefault) e.preventDefault();
+  if (success) {
+    let gPos = getGameMousePos();
+    if (isRewardImageHoveredAt(gPos.x, gPos.y)) {
+      copyCoords();
+      return false;
+    }
+  }
   let gPos = getGameMousePos();
   touchedHubId = -1;
   for (let hub of hubs) {
@@ -584,6 +676,24 @@ function drawFrostedGlassModal() {
   textFont(FONT_TITLE);
   textSize(16);
   text("Encuentra la hoja", BASE_W / 2, my + 476);
+
+  if (coordsCopied) {
+    push();
+    rectMode(CENTER);
+    fill(40, 160, 90, 240);
+    stroke(255, 255, 255, 200);
+    strokeWeight(1.5);
+    let tw = 320;
+    let th = 36;
+    rect(BASE_W / 2, my + 450, tw, th, 10);
+    fill(255);
+    textFont(FONT_BODY);
+    textSize(11);
+    textStyle(BOLD);
+    textAlign(CENTER, CENTER);
+    text("Coordenadas copiadas al portapapeles", BASE_W / 2, my + 450);
+    pop();
+  }
 
   pop();
 }
