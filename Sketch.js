@@ -27,7 +27,7 @@ let isMobile = false;
 let rotationRequired = false;
 let touchedHubId = -1;
 
-const COORDS_TEXT = "-34.9214°5, -57.9545° W";
+const COORDS_TEXT = "730, C. 62 702, B1904 La Plata, Provincia de Buenos Aires";
 let coordsCopied = false;
 let coordsCopiedTimer = 0;
 
