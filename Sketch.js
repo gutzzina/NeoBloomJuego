@@ -698,9 +698,6 @@ if (coordsCopied) {
   pop();
 } // <-- Aquí termina drawFrostedGlassModal
 
-// ==========================================
-// ESTAS DOS DEBEN IR AFUERA (AL FINAL DEL TODO)
-// ==========================================
 function checkRotation() {
   if (isMobile && windowWidth < windowHeight) {
     rotationRequired = true;
