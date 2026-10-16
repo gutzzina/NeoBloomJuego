@@ -659,11 +659,8 @@ function drawFrostedGlassModal() {
   textStyle(BOLD);
   fill(20, 45, 35);
   textSize(15);
-<<<<<<< HEAD
   text("730, C. 62 702, B1904 La Plata, Provincia de Buenos Aires", BASE_W / 2, boxY + 52);
-=======
   text("-730, C. 62 702, B1904 La Plata, Provincia de Buenos Aires", BASE_W / 2, boxY + 52);
->>>>>>> 1636fe8752c479d81621733c5ab27ada1767bae4
 
   stroke(190, 230, 210, 120);
   strokeWeight(1);
