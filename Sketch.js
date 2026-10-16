@@ -677,7 +677,7 @@ function drawFrostedGlassModal() {
   textSize(16);
   text("Encuentra la hoja", BASE_W / 2, my + 476);
 
-  if (coordsCopied) {
+if (coordsCopied) {
     push();
     rectMode(CENTER);
     fill(40, 160, 90, 240);
@@ -695,5 +695,27 @@ function drawFrostedGlassModal() {
     pop();
   }
 
+  pop();
+} // <-- Aquí termina drawFrostedGlassModal
+
+// ==========================================
+// ESTAS DOS DEBEN IR AFUERA (AL FINAL DEL TODO)
+// ==========================================
+function checkRotation() {
+  if (isMobile && windowWidth < windowHeight) {
+    rotationRequired = true;
+  } else {
+    rotationRequired = false;
+  }
+}
+
+function drawRotationOverlay() {
+  push();
+  background(242, 245, 246);
+  fill(30, 45, 40);
+  textFont(FONT_TITLE);
+  textSize(14);
+  textAlign(CENTER, CENTER);
+  text("Por favor, gira tu dispositivo\nen modo horizontal", width / 2, height / 2);
   pop();
 }
